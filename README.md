@@ -5,7 +5,7 @@ A profile management utility for Thunderbird. Backup _(lay)_ and restore _(hatch
 > The current version of Thunder-Egg expects `alias_rules.json` in profile directories before backing up. If it doesn't exist, create an empty file of the same name: `touch /path/to/profile/alias_rules.json`.
 
 ## Quickstart
-Both backup and restore modes can be launched in interactive mode via `egg lay` and `egg hatch`, respectively.
+Both backup and restore modes can be launched interactively via `egg lay` and `egg hatch`, respectively.
 
 #### Backup Profile
 ```bash
