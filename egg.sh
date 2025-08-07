@@ -205,7 +205,7 @@ term.draw_hl() {
 }
 
 cleanup() {
-    trap - ERR INT TERM HUP KILL QUIT
+    trap - ERR INT TERM HUP QUIT
     trap 'term.exit_screen; exit 1' ERR
     trap 'term.exit_screen; exit 0' INT TERM HUP QUIT
     local abort="${1,,}"
