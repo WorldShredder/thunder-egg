@@ -41,7 +41,7 @@ egg [ACTION] [OPTION...]
 | -p, --profile | str | Thunderbird profile name to backup
 | -i, --iso | | Use human-readable timestamp instead of Unix epoch
 
-## Hatch Options
+### Hatch Options
 | Option | Value | Description
 | --- | --- | ---
 | -s, --source | PATH | Thunderbird egg to restore
