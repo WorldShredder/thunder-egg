@@ -310,7 +310,6 @@ egg.parse_opts() {
             opts_len="${#opts}"
             val=''
             for ((i=0; i < opts_len; i++)) ; do
-                (( i + 1 == opts_len )) && val="$2"
                 if (( i + 1 == opts_len )) &&\
                  [[ ! "$2" =~ ^-{1,2} ]] &&\
                  [ -n "$2" ] ; then
@@ -360,72 +359,68 @@ egg.parse_opts() {
 }
 
 egg.lay.parse_opts() {
-    while (( $# > 0 )) ; do
-        case "$1" in
-            -s|--source)
-                if [ -z "$2" ] || [ ! -d "$2" ] ; then
-                    log.error "'$1' missing or invalid Thunderbird directory"
-                    return 3
-                fi
-                SOURCE_PATH="$2"
-                return 2 ;;
-            -d|--dest)
-                if [ -z "$2" ] ; then
-                    log.error "'$1' missing destination directory"
-                    return 3
-                fi
-                DEST_PATH="$2"
-                return 2 ;;
-            -p|--profile)
-                if [ -z "$2" ] ; then
-                    log.error "'$1' missing Thunderbird profile name"
-                    return 3
-                fi
-                PROFILE_NAME="$2"
-                return 2 ;;
-            -i|--iso)
-                ISO_TIMESTAMP=true
-                return 1 ;;
-            -h|--help)
-                egg.lay.print_help
-                exit 0 ;;
-            '')
-                return 1 ;;
-            *)
-                return ;;
-        esac
-    done
+    case "$1" in
+        -s|--source)
+            if [ -z "$2" ] || [ ! -d "$2" ] ; then
+                log.error "'$1' missing or invalid Thunderbird directory"
+                return 3
+            fi
+            SOURCE_PATH="$2"
+            return 2 ;;
+        -d|--dest)
+            if [ -z "$2" ] ; then
+                log.error "'$1' missing destination directory"
+                return 3
+            fi
+            DEST_PATH="$2"
+            return 2 ;;
+        -p|--profile)
+            if [ -z "$2" ] ; then
+                log.error "'$1' missing Thunderbird profile name"
+                return 3
+            fi
+            PROFILE_NAME="$2"
+            return 2 ;;
+        -i|--iso)
+            ISO_TIMESTAMP=true
+            return 1 ;;
+        -h|--help)
+            egg.lay.print_help
+            exit 0 ;;
+        '')
+            return 1 ;;
+        *)
+            return ;;
+    esac
 }
 
 egg.hatch.parse_opts() {
-    while (( $# > 0 )) ; do
-        case "$1" in
-            -s|--source)
-                if [ -z "$2" ] || [ ! -f "$2" ] ; then
-                    log.error "'$1' missing or invalid egg/tar file"
-                    return 3
-                fi
-                SOURCE_PATH="$2"
-                return 2 ;;
-            -d|--dest)
-                if [ -z "$2" ] || [ ! -d "$2" ] ; then
-                    log.error "'$1' missing or invalid Thunderbird directory"
-                    return 3
-                fi
-                DEST_PATH="$2"
-                return 2 ;;
-            -x|--exec)
-                EXECUTE_AFTER=true
-                return 1 ;;
-            -h|--help)
-                egg.hatch.print_help
-                exit 0 ;;
-            '')
-                return 1 ;;
-            *)
-                return ;;
-        esac
-    done
+    case "$1" in
+        -s|--source)
+            if [ -z "$2" ] || [ ! -f "$2" ] ; then
+                log.error "'$1' missing or invalid egg/tar file"
+                return 3
+            fi
+            SOURCE_PATH="$2"
+            return 2 ;;
+        -d|--dest)
+            if [ -z "$2" ] || [ ! -d "$2" ] ; then
+                log.error "'$1' missing or invalid Thunderbird directory"
+                return 3
+            fi
+            DEST_PATH="$2"
+            return 2 ;;
+        -x|--exec)
+            EXECUTE_AFTER=true
+            return 1 ;;
+        -h|--help)
+            egg.hatch.print_help
+            exit 0 ;;
+        '')
+            return 1 ;;
+        *)
+            return ;;
+    esac
 }
 
 config.generate_profiles() {
@@ -463,7 +458,7 @@ egg.compress() {
     ( "$VERBOSE_LOG" ) && opts='-vv'
 
     local tar_out status
-    tar_out="$(tar $opts -cJf "${backup_path}.tar" "${backup_targets[@]}" 2>&1)"
+    tar_out="$(tar $opts -cJf "${backup_path}.tar.xz" "${backup_targets[@]}" 2>&1)"
     status="$?"
 
     if [ -n "$tar_out" ] ; then
@@ -678,9 +673,8 @@ egg.init() {
         action="${1,,}"
         shift
     fi
-    egg.parse_opts "$@" || return 1
-
     LOG_FILE='/dev/null'
+    egg.parse_opts "$@" || return 1
     if ( "$LOG_TO_FILE" ) ; then
         LOG_FILE="$HOME/.tb-egg.log"
         [ -f "$LOG_FILE" ] && mv -f "$LOG_FILE" "$LOG_FILE~"
