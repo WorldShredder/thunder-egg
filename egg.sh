@@ -5,7 +5,7 @@ shopt -s expand_aliases
 set -o pipefail
 #set -e
 
-EGG_VERSION='1.0.0'
+EGG_VERSION='1.0.1'
 MULTIPLEX_TERM=true
 SCREEN_LAYER=0
 VERBOSE_LOG=false
