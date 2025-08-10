@@ -477,7 +477,7 @@ egg.decompress() {
     ( "$VERBOSE_LOG" ) && opts='-vv'
 
     local tar_out status
-    tar_out="$(tar $opts -xf "$source_path" -C "$profile_path"/ 2>&1)"
+    tar_out="$(tar $opts --force-local -xf "$source_path" -C "$profile_path"/ 2>&1)"
     status="$?"
 
     if [ -n "$tar_out" ] ; then
