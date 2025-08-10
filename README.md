@@ -2,7 +2,8 @@
 A profile management utility for Thunderbird. Backup _(lay)_ and restore _(hatch)_ profiles interactively or using [commandline options](#commandline-options).
 
 > [!NOTE]
-> The current version of Thunder-Egg expects `alias_rules.json` in profile directories before backing up. If it doesn't exist, create an empty file of the same name: `touch /path/to/profile/alias_rules.json`.
+> - The current version of Thunder-Egg expects `alias_rules.json` in profile directories before backing up. If it doesn't exist, create an empty file of the same name: `touch /path/to/profile/alias_rules.json`.
+> - Thunder-Egg currently does _**not**_ backup local mail; only account data, OpenPGP keys and Thunderbird client configurations are backed up.
 
 ## Quickstart
 Both backup and restore modes can be launched interactively via `egg lay` and `egg hatch`, respectively.
