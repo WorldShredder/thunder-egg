@@ -5,7 +5,7 @@ shopt -s expand_aliases
 set -o pipefail
 #set -e
 
-EGG_VERSION='1.0.1'
+EGG_VERSION='1.1.0'
 MULTIPLEX_TERM=true
 SCREEN_LAYER=0
 VERBOSE_LOG=false
@@ -16,8 +16,9 @@ DEFAULT_TBIRD_DIR="$HOME/.thunderbird"
 SOURCE_PATH=''
 DEST_PATH=''
 PROFILE_NAME=''
+DEFAULT_ALIAS_RULES_FILE='alias_rules.json'
+
 BACKUP_TARGETS=(
-    'alias_rules.json'
     'cert9.db'
     'cert_override.txt'
     'key4.db'
@@ -269,6 +270,7 @@ Options:
   -s, --source PATH   Thunderbird source directory, defaults to ~/.thunderbird
   -d, --dest PATH     Output directory to lay egg in, defaults to PWD
   -p, --profile NAME  Thunderbird profile name to backup
+  -a, --alias-file    Alias rules file name, defaults to 'alias_rules.json'
   -i, --iso           Use human-readable timestamp instead of Unix epoch
   -h, --help          Print this help message
 
@@ -381,6 +383,13 @@ egg.lay.parse_opts() {
             fi
             PROFILE_NAME="$2"
             return 2 ;;
+        -a|--alias-file)
+            if [ -z "$2" ] ; then
+                log.error "'$1' missing alias rules file name"
+                return 3
+            fi
+            ALIAS_RULES_FILE="$2"
+            return 2 ;;
         -i|--iso)
             ISO_TIMESTAMP=true
             return 1 ;;
@@ -487,6 +496,15 @@ egg.decompress() {
     return "$status"
 }
 
+# egg.extract_profile_names() {
+#     local profiles_ini="$1"
+
+#     local profiles
+#     if [ -f "$profiles_ini" ] ; then
+#         grep -oP '(?<=^Path=).*' "$profiles_ini" 2>/dev/null
+#     fi
+# }
+
 egg.lay() {
     log.info2 'Laying Thunderbird Egg'
 
@@ -508,33 +526,39 @@ egg.lay() {
     fi
     log.info "Thunderbird Dir ${M}${source_path}"
 
-    if [ ! -f "$source_path"/profiles.ini ] ; then
-        log.error "Missing 'profiles.ini' in in '$source_path'"
-        return 1
-    fi
-    local profiles
-    profiles="$(grep -oP '(?<=^Path=).*' "$source_path"/profiles.ini)"
-    if [ -z "$profiles" ] ; then
-        log.error 'No Thunderbird profiles to backup'
-        return 1
-    fi
     local profile="$PROFILE_NAME"
-    if [ -z "$profile" ] || [ ! -d "$source_path"/"$profile" ] ; then
+    local profile_path="${source_path}/${profile}"
+    if [ -z "$profile" ] || [ ! -d "$profile_path" ] ; then
         if [ -n "$profile" ] ; then
             log.warn "Profile '$profile' does not exist"
         fi
-        while true ; do
-            if ! profile="$(echo "$profiles" | zenity --list \
-            --title 'Thunderbird Profile' --column 'Profile' --width 400 \
-            --height 300 2>/dev/null)" ; then
+
+        # local profiles
+        # profiles="$(egg.extract_profile_names "$source_path/profiles.ini")"
+        # while [ -n "$profiles" ] ; do
+        #     if ! profile="$(echo "$profiles" | zenity --list \
+        #     --title 'Thunderbird Profile' --column 'Profile' --width 400 \
+        #     --height 300 2>/dev/null)" ; then
+        #         log.error 'No profile selected'
+        #         return 1
+        #     fi
+        #     if [ -z "$profile" ] || [ ! -d "$source_path"/"$profile" ] ; then
+        #         log.warn "Profile '$profile' does not exist in '$source_path'"
+        #         continue
+        #     fi
+        #     break
+        # done
+
+        while [ -z "$profile" ] ; do
+            if ! profile_path="$(zenity --file-selection \
+            --filename "$source_path/" --directory 2>/dev/null)" ; then
                 log.error 'No profile selected'
                 return 1
             fi
-            if [ -z "$profile" ] || [ ! -d "$source_path"/"$profile" ] ; then
-                log.warn "Profile '$profile' does not exist in '$source_path'"
-                continue
+            if [ -d "$profile_path" ] ; then
+                profile="${profile_path##*/}"
+                log.info "Profile found '$profile'"
             fi
-            break
         done
     fi
     log.info "Profile ${M}${profile}"
@@ -555,7 +579,7 @@ egg.lay() {
     fi
     log.info "Backup Dir ${M}${dest_path}"
 
-    cd "$source_path/$profile" || return 1
+    cd "$profile_path" || return 1
 
     local timestamp
     if ( "$ISO_TIMESTAMP" ) ; then
@@ -565,14 +589,15 @@ egg.lay() {
     fi
     local out="${profile}@${timestamp}"
 
+    if [ -z "$ALIAS_RULES_FILE" ] ; then
+        ALIAS_RULES_FILE="$DEFAULT_ALIAS_RULES_FILE"
+    fi
+    BACKUP_TARGETS+=( "$ALIAS_RULES_FILE" )
+
     local targets=()
     for target in "${BACKUP_TARGETS[@]}" ; do
         if [ ! -e "$target" ] ; then
-            if [ "$target" == 'alias_rules.json' ] ; then
-                log.error "Important backup target missing '$target'"
-            else
-                log.warn "Skipping nonexistent backup target '$target'"
-            fi
+            log.warn "Skipping nonexistent backup target '$target'"
             continue
         fi
         ( "$VERBOSE_LOG" ) && log.ok "Adding '$target' to egg"
@@ -595,7 +620,10 @@ egg.hatch() {
         [ -n "$source_path" ] && log.warn "Source does not exist '$source_path'"
         while true ; do
             if ! source_path="$(zenity --file-selection \
-            --title 'Thunderbird Egg to Hatch' --file-filter -- *@*.tar.xz \
+            --title 'Thunderbird Egg to Hatch' \
+            --file-filter 'Egg (profile@date.tar.xz) | *@*.tar.xz' \
+            --file-filter '.tar.xz | *.tar.xz' \
+            --file-filter 'All Files | *' \
             2>/dev/null)" ; then
                 log.error 'No backup egg to restore'
                 return 1
@@ -606,7 +634,8 @@ egg.hatch() {
             break
         done
     fi
-    log.info "Thunderbird Egg ${M}${source_path}"
+    local egg_file="${source_path##*/}"
+    log.info "Thunderbird Egg ${M}$egg_file"
 
     local dest_path="$DEST_PATH"
     if [ -z "$dest_path" ] ; then
@@ -631,7 +660,18 @@ egg.hatch() {
     fi
     log.info "Thunderbird Dir ${M}${dest_path}"
 
-    local profile="${source_path##*/}"; profile="${profile%@*}"
+    # Tails has one profile 'profile.default' and cannot access ProfileManager
+    # without calling Thunderbird bin directly from /usr/lib/thunderbird/...
+
+    local profile
+    local tails_os=false
+    if [ "$(lsb_release -si 2>/dev/null)" == 'Tails' ] ; then
+        tails_os=true
+        profile='profile.default'
+    else
+        profile="$(grep -oP '[^/]+(?=@[^/]*\.tar\.xz$)' <<< "$egg_file")"
+    fi
+
     local profile_path="${dest_path}/${profile}"
     if ! mkdir -p "$profile_path" ; then
         log.error "Failed to make dir '$profile_path'"
@@ -640,9 +680,10 @@ egg.hatch() {
         log.error 'Failed to hatch egg'
         return 1
     fi
-    log.info "Egg hatched for '$profile'"
+    log.info "Profile '$profile' hatched"
 
-    if [ ! -f "$dest_path"/profiles.ini ] ; then
+    # Tails OS doesn't use profiles.ini or installs.ini at all?
+    if [ ! -f "$dest_path"/profiles.ini ] && ( ! "$tails_os" ) ; then
         local conf
         log.info 'Generating profiles.ini'
         conf="$(config.generate_profiles |\
