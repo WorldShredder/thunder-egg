@@ -256,7 +256,7 @@ Examples:
   egg lay -s ~/foo -d ~/bar  # Source from 'foo' & backup to 'bar'
   egg hatch                  # Interactively restore a profile
   egg hatch -s foo.tar.xz    # Restore profile to default directory
-  egg hatch -x -e foo.tar.xz # Execute Thunderbird with egg 'foo'
+  egg hatch -xs foo.tar.xz   # Execute Thunderbird with egg 'foo'
 
 EOF
 }
@@ -289,13 +289,13 @@ Restore Thunderbird profiles. See `egg --help` for general help.
 Options:
   -s, --source PATH  Thunderbird egg to restore
   -d, --dest PATH    Path to Thunderbird directory, defaults to ~/.thunderbird
-  -e, --exec         Execute Thunderbird with profile after hatching
+  -x, --exec         Execute Thunderbird with profile after hatching
   -h, --help         Print this help message
 
 Examples:
   egg hatch                  # Interactively restore a profile
   egg hatch -s foo.tar.xz    # Restore profile to default directory
-  egg hatch -x -e foo.tar.xz # Execute Thunderbird with egg 'foo'
+  egg hatch -xs foo.tar.xz   # Execute Thunderbird with egg 'foo'
 EOF
 }
 

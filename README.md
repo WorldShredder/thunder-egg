@@ -48,4 +48,4 @@ egg [ACTION] [OPTION...]
 | --- | --- | ---
 | -s, --source | PATH | Thunderbird egg to restore
 | -d, --dest | PATH | Thunderbird directory, defaults to `~/.thunderbird`
-| -e, --exec | | Execute Thunderbird with restored profile after hatching
+| -x, --exec | | Execute Thunderbird with restored profile after hatching
